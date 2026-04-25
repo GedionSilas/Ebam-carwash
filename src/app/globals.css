@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 15% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 15% 12%;
+    --primary: 204 65% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 204 70% 45%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 222 15% 12%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 12% 45%;
+    --accent: 204 65% 95%;
+    --accent-foreground: 204 65% 30%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 91%;
+    --input: 214 20% 91%;
+    --ring: 204 65% 53%;
+    --radius: 0.625rem;
+    --surface: 210 20% 98%;
+    --shadow-soft: 0 1px 2px 0 hsl(222 15% 12% / 0.04), 0 4px 16px -4px hsl(222 15% 12% / 0.06);
+    --shadow-cta: 0 8px 24px -8px hsl(204 65% 53% / 0.5);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 220 15% 6%;
+    --foreground: 210 20% 96%;
+    --card: 220 15% 9%;
+    --card-foreground: 210 20% 96%;
+    --popover: 220 15% 9%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 204 75% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 204 70% 45%;
+    --secondary: 220 12% 14%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 220 12% 14%;
+    --muted-foreground: 215 12% 65%;
+    --accent: 204 50% 18%;
+    --accent-foreground: 204 75% 75%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 12% 16%;
+    --input: 220 12% 16%;
+    --ring: 204 75% 55%;
+    --surface: 220 15% 8%;
+    --shadow-soft: 0 1px 2px 0 hsl(0 0% 0% / 0.3), 0 8px 24px -8px hsl(0 0% 0% / 0.5);
+    --shadow-cta: 0 8px 32px -8px hsl(204 75% 55% / 0.6);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3, h4 {
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .container-tight {
+    @apply mx-auto w-full max-w-6xl px-6;
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-cta {
+    box-shadow: var(--shadow-cta);
+  }
+}
