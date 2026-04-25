@@ -15,18 +15,12 @@ interface TimePickerProps {
   className?: string;
 }
 
-type TimeSlot = {
-  value: string;
-  label: string;
-  isAfternoon: boolean;
-};
-
 export function TimePicker({ value, onChange, id, className }: TimePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Generate time intervals every 30 minutes from 08:00 to 18:00
   const timeSlots = React.useMemo(() => {
-    const slots: TimeSlot[] = [];
+    const slots: { value: string; label: string; isAfternoon: boolean }[] = [];
     for (let i = 8; i <= 18; i++) {
       for (const j of [0, 30]) {
         if (i === 18 && j > 0) continue; // End exactly at 18:00
