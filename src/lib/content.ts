@@ -62,7 +62,7 @@ export type SiteContent = {
   footer: Footer | null;
 };
 
-const siteContentQuery = `{
+export const siteContentQuery = `{
   "siteSettings": *[_type == "siteSettings"][0]{
     ...,
     videos[]{
@@ -90,7 +90,7 @@ const siteContentQuery = `{
     _id,
     title,
     "price": coalesce(string(price), ""),
-    features,
+    "features": coalesce(features, []),
     isPopular
   },
   "footer": *[_type == "footer"][0]{
@@ -100,5 +100,16 @@ const siteContentQuery = `{
   }
 }`;
 
-export const fetchSiteContent = async (): Promise<SiteContent> =>
-  sanityClient.fetch(siteContentQuery);
+export const fetchSiteContent = async (): Promise<SiteContent> => {
+  // Browser fetch goes through a server route so private datasets and drafts can still be resolved.
+  if (typeof window !== "undefined") {
+    const response = await fetch("/api/site-content", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch site content: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  return sanityClient.fetch(siteContentQuery);
+};

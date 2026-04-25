@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, BusFront, Car, Check, Clock, Mail, MapPin, Phone, Sparkles, Star, Truck } from "lucide-react";
+import { ArrowRight, Check, Clock, Mail, MapPin, Phone, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BookingButton } from "@/components/BookingButton";
@@ -28,44 +28,26 @@ const fallbackTestimonials = [
   { message: "Honest pricing, premium results. Highly recommend.", name: "Sara L.", role: "BMW X5" },
 ];
 
-const vehiclePricing = {
-  sedan: {
-    label: "Sedan",
-    seats: "4 seats",
-    full: 125,
+const fallbackPricingPlans = [
+  {
+    title: "Express Wash",
+    price: "$89",
+    features: ["Pre-wash", "Exterior wash", "Wheel & tire wash", "Bug removal"],
+    isPopular: false,
   },
-  suv: {
-    label: "SUV / Minivan",
-    seats: "7+ seats",
-    full: 150,
+  {
+    title: "Full Detailing",
+    price: "$125",
+    features: [
+      "Pre-wash",
+      "Wheel & tire wash",
+      "Bug removal",
+      "Engine wash",
+      "Tire shine",
+      "Interior vacuum (wet & dry)",
+    ],
+    isPopular: true,
   },
-  truck: {
-    label: "Truck",
-    seats: "Large vehicle",
-    full: 180,
-  },
-} as const;
-
-const vehicleOptions = [
-  { key: "sedan", icon: Car },
-  { key: "suv", icon: BusFront },
-  { key: "truck", icon: Truck },
-] as const;
-
-const expressServices = [
-  "Pre-wash",
-  "Exterior wash",
-  "Wheel & tire wash",
-  "Bug removal",
-];
-
-const fullDetailServices = [
-  "Pre-wash",
-  "Wheel & tire wash",
-  "Bug removal",
-  "Engine wash",
-  "Tire shine",
-  "Interior vacuum (wet & dry)",
 ];
 
 export default function HomePage() {
@@ -73,7 +55,6 @@ export default function HomePage() {
   const [content, setContent] = useState<SiteContent | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<keyof typeof vehiclePricing>("sedan");
 
   useEffect(() => {
     const stored = localStorage.getItem("ebam-theme");
@@ -107,9 +88,7 @@ export default function HomePage() {
   const siteSettings = content?.siteSettings;
   const services = content?.services?.length ? content.services : fallbackServices;
   const testimonials = content?.testimonials?.length ? content.testimonials : fallbackTestimonials;
-  const activeVehicle = vehiclePricing[selectedVehicle];
-  const fullPrice = activeVehicle.full;
-  const expressPrice = Math.max(Math.round(fullPrice * 0.72), 89);
+  const pricingPlans = content?.pricingPlans?.length ? content.pricingPlans : fallbackPricingPlans;
 
   const heroImageUrl = siteSettings?.heroImage ? urlFor(siteSettings.heroImage).width(1920).height(1080).fit("crop").url() : heroCar.src;
   const logoImageUrl = siteSettings?.logoImage ? urlFor(siteSettings.logoImage).width(256).height(256).fit("crop").url() : null;
@@ -242,7 +221,7 @@ export default function HomePage() {
           <div className="grid gap-5 md:grid-cols-3">
             {services.map((s) => (
               <div
-                key={s.title}
+                key={s._id || s.title}
                 className={`group relative flex flex-col rounded-2xl border p-7 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft ${
                   s.isPopular ? "border-primary/40 bg-card" : "border-border bg-card"
                 }`}
@@ -294,77 +273,30 @@ export default function HomePage() {
                 {siteSettings?.pricingSubtitle || "Select your vehicle to see seat-based pricing. Prices vary by vehicle size."}
               </p>
             </div>
-            <fieldset className="mb-6">
-              <legend className="mb-3 text-sm font-medium text-foreground">Choose your vehicle</legend>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {vehicleOptions.map(({ key, icon: Icon }) => {
-                  const vehicle = vehiclePricing[key];
-                  const isSelected = selectedVehicle === key;
-
-                  return (
-                    <label
-                      key={key}
-                      className={`group flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all duration-300 ${
-                        isSelected ? "border-primary/60 shadow-soft ring-1 ring-primary/40" : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="vehicleType"
-                        value={key}
-                        checked={isSelected}
-                        onChange={() => setSelectedVehicle(key)}
-                        className="sr-only"
-                      />
-                      <span className={`grid h-9 w-9 place-items-center rounded-full transition-colors ${isSelected ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"}`}>
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span>
-                        <span className="block text-sm font-semibold">{vehicle.label}</span>
-                        <span className="block text-xs text-muted-foreground">{vehicle.seats}</span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
-                <p className="text-sm text-muted-foreground">Express Wash</p>
-                <h3 className="mt-1 font-display text-2xl font-semibold">Fast exterior refresh</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Ideal for regular upkeep with essential exterior care.</p>
-                <div className="mt-5 flex items-baseline gap-2 transition-all duration-300">
-                  <span className="font-display text-4xl font-bold">${expressPrice}</span>
-                  <span className="text-sm text-muted-foreground">/ visit</span>
+              {pricingPlans.map((plan) => (
+                <div
+                  key={plan._id || plan.title}
+                  className={`rounded-2xl border bg-card p-6 shadow-soft ${
+                    plan.isPopular ? "border-primary/40" : "border-border"
+                  }`}
+                >
+                  <p className="text-sm text-muted-foreground">{plan.isPopular ? "Most Popular" : "Service Plan"}</p>
+                  <h3 className="mt-1 font-display text-2xl font-semibold">{plan.title}</h3>
+                  <div className="mt-5 flex items-baseline gap-2 transition-all duration-300">
+                    <span className="font-display text-4xl font-bold">{plan.price || "$0"}</span>
+                    <span className="text-sm text-muted-foreground">/ visit</span>
+                  </div>
+                  <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
+                    {(plan.features || []).map((feature) => (
+                      <li key={feature} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-primary" /> {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <BookingButton className="mt-6 w-full" label="Book Now" />
                 </div>
-                <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-                  {expressServices.map((service) => (
-                    <li key={service} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" /> {service}
-                    </li>
-                  ))}
-                </ul>
-                <BookingButton className="mt-6 w-full" label="Book Now" />
-              </div>
-
-              <div className="rounded-2xl border border-primary/40 bg-card p-6 shadow-soft">
-                <p className="text-sm text-muted-foreground">Full Detailing</p>
-                <h3 className="mt-1 font-display text-2xl font-semibold">Complete inside & out detail</h3>
-                <div className="mt-2 text-xs font-medium text-primary">For {activeVehicle.seats} vehicles</div>
-                <div className="mt-5 flex items-baseline gap-2 transition-all duration-300">
-                  <span className="font-display text-4xl font-bold">${fullPrice}</span>
-                  <span className="text-sm text-muted-foreground">/ visit</span>
-                </div>
-                <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-                  {fullDetailServices.map((service) => (
-                    <li key={service} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" /> {service}
-                    </li>
-                  ))}
-                </ul>
-                <BookingButton className="mt-6 w-full" label="Book Now" />
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -377,7 +309,7 @@ export default function HomePage() {
           </h2>
           <div className="grid gap-5 md:grid-cols-3">
             {testimonials.map((t) => (
-              <figure key={t.name} className="rounded-2xl border border-border bg-card p-7">
+              <figure key={t._id || t.name} className="rounded-2xl border border-border bg-card p-7">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-primary text-primary" />
