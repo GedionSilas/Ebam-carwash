@@ -76,7 +76,7 @@ export const siteContentQuery = `{
     videos[]{
       title,
       subtitle,
-      videoUrl,
+      "videoUrl": videoFile.asset->url,
       posterImage
     },
     businessHours[]{

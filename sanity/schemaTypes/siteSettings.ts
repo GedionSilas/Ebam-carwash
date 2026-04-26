@@ -21,7 +21,7 @@ export const siteSettingsType = defineType({
           fields: [
             defineField({ name: "title", title: "Video Title", type: "string" }),
             defineField({ name: "subtitle", title: "Video Subtitle", type: "text" }),
-            defineField({ name: "videoUrl", title: "Video URL", type: "url" }),
+            defineField({ name: "videoFile", title: "Video File", type: "file", options: { accept: "video/*" } }),
             defineField({ name: "posterImage", title: "Poster Image", type: "image", options: { hotspot: true } }),
           ],
         },
