@@ -40,6 +40,54 @@ export const siteSettingsType = defineType({
     defineField({ name: "testimonialsHeading", title: "Testimonials Heading", type: "string" }),
     defineField({ name: "bookingHeading", title: "Booking Heading", type: "string" }),
     defineField({ name: "bookingSubtitle", title: "Booking Subtitle", type: "text" }),
+    defineField({
+      name: "businessHours",
+      title: "Business Hours",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            defineField({
+              name: "day",
+              title: "Day of Week",
+              type: "string",
+              options: {
+                list: [
+                  { title: "Monday", value: "1" },
+                  { title: "Tuesday", value: "2" },
+                  { title: "Wednesday", value: "3" },
+                  { title: "Thursday", value: "4" },
+                  { title: "Friday", value: "5" },
+                  { title: "Saturday", value: "6" },
+                  { title: "Sunday", value: "0" },
+                ]
+              }
+            }),
+            defineField({ name: "isClosed", title: "Closed", type: "boolean", initialValue: false }),
+            defineField({ name: "openTime", title: "Open Time (24h format, e.g. 09:00)", type: "string" }),
+            defineField({ name: "closeTime", title: "Close Time (24h format, e.g. 13:30)", type: "string" }),
+          ],
+          preview: {
+            select: {
+              day: 'day',
+              isClosed: 'isClosed',
+              open: 'openTime',
+              close: 'closeTime'
+            },
+            prepare(selection: Record<string, unknown>) {
+              const { day, isClosed, open, close } = selection;
+              const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              const dayName = days[parseInt(day as string)] || day;
+              return {
+                title: dayName as string,
+                subtitle: isClosed ? 'Closed' : `${(open as string) || ''} - ${(close as string) || ''}`
+              }
+            }
+          }
+        }
+      ]
+    }),
     defineField({ name: "footerDescription", title: "Footer Description", type: "text" }),
   ],
 });

@@ -18,14 +18,17 @@ import { Calendar } from "@/components/ui/calendar";
 import { TimePicker } from "@/components/TimePicker";
 import { cn } from "@/lib/utils";
 
+import type { BusinessHour } from "@/lib/content";
+
 const carTypes = ["Sedan", "Minivan", "Truck", "SUV", "Other"] as const;
 const serviceTypes = ["Exterior Wash", "Full Wash", "Engine Cleaning", "Detailing"] as const;
 
 interface BookingButtonProps extends ButtonProps {
   label?: string;
+  businessHours?: BusinessHour[];
 }
 
-export const BookingButton = ({ label = "Book Now", ...props }: BookingButtonProps) => {
+export const BookingButton = ({ label = "Book Now", businessHours = [], ...props }: BookingButtonProps) => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -45,7 +48,7 @@ export const BookingButton = ({ label = "Book Now", ...props }: BookingButtonPro
     carType: "Sedan",
     serviceType: "Exterior Wash",
     bookingDate: undefined,
-    bookingStartTime: "09:00",
+    bookingStartTime: "",
   });
 
   const isFormValid = useMemo(
@@ -70,10 +73,36 @@ export const BookingButton = ({ label = "Book Now", ...props }: BookingButtonPro
       carType: "Sedan",
       serviceType: "Exterior Wash",
       bookingDate: undefined,
-      bookingStartTime: "09:00",
+      bookingStartTime: "",
     });
     setErrorMessage("");
   };
+
+  const activeDayHours = useMemo(() => {
+    if (!formData.bookingDate || !businessHours?.length) return null;
+    const dayIndex = formData.bookingDate.getDay().toString();
+    return businessHours.find((h) => h.day === dayIndex);
+  }, [formData.bookingDate, businessHours]);
+
+  const minTime = useMemo(() => {
+    let lowerBound = activeDayHours?.openTime || "00:00";
+    if (formData.bookingDate) {
+      const today = new Date();
+      if (
+        formData.bookingDate.getFullYear() === today.getFullYear() &&
+        formData.bookingDate.getMonth() === today.getMonth() &&
+        formData.bookingDate.getDate() === today.getDate()
+      ) {
+        const currentHour = today.getHours().toString().padStart(2, "0");
+        const currentMinute = today.getMinutes().toString().padStart(2, "0");
+        const currentTime = `${currentHour}:${currentMinute}`;
+        lowerBound = currentTime > lowerBound ? currentTime : lowerBound;
+      }
+    }
+    return lowerBound;
+  }, [activeDayHours, formData.bookingDate]);
+
+  const maxTime = activeDayHours?.closeTime || undefined;
 
   const onOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -230,7 +259,30 @@ export const BookingButton = ({ label = "Book Now", ...props }: BookingButtonPro
                   disabled={(date) => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    return date < today;
+                    if (date < today) return true;
+                    
+                    if (businessHours && businessHours.length > 0) {
+                      const dayIndex = date.getDay().toString();
+                      const dayHours = businessHours.find((h) => h.day === dayIndex);
+                      
+                      // Disable if no hours defined or explicitly closed
+                      if (!dayHours || dayHours.isClosed) {
+                        return true;
+                      }
+
+                      // If it's today, check if we're past the closing time
+                      if (date.getTime() === today.getTime() && dayHours.closeTime) {
+                        const now = new Date();
+                        const currentHour = now.getHours().toString().padStart(2, "0");
+                        const currentMinute = now.getMinutes().toString().padStart(2, "0");
+                        const currentTime = `${currentHour}:${currentMinute}`;
+                        if (currentTime >= dayHours.closeTime) {
+                          return true; // We are past the closing time today
+                        }
+                      }
+                    }
+                    
+                    return false;
                   }}
                 />
               </PopoverContent>
@@ -243,7 +295,19 @@ export const BookingButton = ({ label = "Book Now", ...props }: BookingButtonPro
               id="bookingStartTime"
               value={formData.bookingStartTime}
               onChange={(value) => setFormData((prev) => ({ ...prev, bookingStartTime: value }))}
+              minTime={minTime}
+              maxTime={maxTime}
             />
+            {activeDayHours && !activeDayHours.isClosed && (
+              <p className="text-xs text-muted-foreground">
+                Available hours: {activeDayHours.openTime || "08:00"} - {activeDayHours.closeTime || "18:00"}
+              </p>
+            )}
+            {activeDayHours?.isClosed && (
+              <p className="text-xs text-destructive">
+                We are closed on this day.
+              </p>
+            )}
           </div>
 
           {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}

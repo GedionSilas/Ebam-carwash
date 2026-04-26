@@ -25,6 +25,13 @@ export type PricingPlan = {
   isPopular?: boolean;
 };
 
+export type BusinessHour = {
+  day: string;
+  isClosed: boolean;
+  openTime?: string;
+  closeTime?: string;
+};
+
 export type SiteSettings = {
   heroTitle: string;
   heroSubtitle: string;
@@ -46,6 +53,7 @@ export type SiteSettings = {
   footerDescription?: string;
   bookingHeading?: string;
   bookingSubtitle?: string;
+  businessHours?: BusinessHour[];
 };
 
 export type Footer = {
@@ -70,6 +78,12 @@ export const siteContentQuery = `{
       subtitle,
       videoUrl,
       posterImage
+    },
+    businessHours[]{
+      day,
+      isClosed,
+      openTime,
+      closeTime
     }
   },
   "services": *[_type == "service"] | order(order asc){

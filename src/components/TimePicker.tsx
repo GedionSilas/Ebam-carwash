@@ -13,21 +13,27 @@ interface TimePickerProps {
   onChange: (value: string) => void;
   id?: string;
   className?: string;
+  minTime?: string;
+  maxTime?: string;
 }
 
-export function TimePicker({ value, onChange, id, className }: TimePickerProps) {
+export function TimePicker({ value, onChange, id, className, minTime, maxTime }: TimePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  // Generate time intervals every 30 minutes from 08:00 to 18:00
+  // Generate time intervals every 30 minutes from 06:00 to 22:00 (filtered later)
   const timeSlots = React.useMemo(() => {
     const slots: { value: string; label: string; isAfternoon: boolean }[] = [];
-    for (let i = 8; i <= 18; i++) {
+    for (let i = 6; i <= 22; i++) {
       for (const j of [0, 30]) {
-        if (i === 18 && j > 0) continue; // End exactly at 18:00
+        if (i === 22 && j > 0) continue;
         
         const hour24 = i.toString().padStart(2, "0");
         const minutes = j.toString().padStart(2, "0");
         const value24 = `${hour24}:${minutes}`;
+        
+        // Filter by min/max if provided
+        if (minTime && value24 < minTime) continue;
+        if (maxTime && value24 >= maxTime) continue;
         
         const period = i >= 12 ? "PM" : "AM";
         const hour12 = i % 12 || 12;
@@ -37,7 +43,7 @@ export function TimePicker({ value, onChange, id, className }: TimePickerProps) 
       }
     }
     return slots;
-  }, []);
+  }, [minTime, maxTime]);
 
   const selectedSlot = timeSlots.find((slot) => slot.value === value);
   const selectedLabel = selectedSlot?.label || "Select a time";
@@ -63,42 +69,46 @@ export function TimePicker({ value, onChange, id, className }: TimePickerProps) 
       </PopoverTrigger>
       <PopoverContent className="w-[340px] p-4" align="start">
         <div className="flex flex-col gap-6">
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm text-muted-foreground leading-none">Morning</h4>
-            <div className="grid grid-cols-4 gap-2">
-              {morningSlots.map((slot) => (
-                <Button
-                  key={slot.value}
-                  variant={value === slot.value ? "default" : "outline"}
-                  className="w-full text-xs px-0"
-                  onClick={() => {
-                    onChange(slot.value);
-                    setIsOpen(false);
-                  }}
-                >
-                  {slot.label}
-                </Button>
-              ))}
+          {morningSlots.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-muted-foreground leading-none">Morning</h4>
+              <div className="grid grid-cols-4 gap-2">
+                {morningSlots.map((slot) => (
+                  <Button
+                    key={slot.value}
+                    variant={value === slot.value ? "default" : "outline"}
+                    className="w-full text-xs px-0"
+                    onClick={() => {
+                      onChange(slot.value);
+                      setIsOpen(false);
+                    }}
+                  >
+                    {slot.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm text-muted-foreground leading-none">Afternoon</h4>
-            <div className="grid grid-cols-4 gap-2">
-              {afternoonSlots.map((slot) => (
-                <Button
-                  key={slot.value}
-                  variant={value === slot.value ? "default" : "outline"}
-                  className="w-full text-xs px-0"
-                  onClick={() => {
-                    onChange(slot.value);
-                    setIsOpen(false);
-                  }}
-                >
-                  {slot.label}
-                </Button>
-              ))}
+          )}
+          {afternoonSlots.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm text-muted-foreground leading-none">Afternoon</h4>
+              <div className="grid grid-cols-4 gap-2">
+                {afternoonSlots.map((slot) => (
+                  <Button
+                    key={slot.value}
+                    variant={value === slot.value ? "default" : "outline"}
+                    className="w-full text-xs px-0"
+                    onClick={() => {
+                      onChange(slot.value);
+                      setIsOpen(false);
+                    }}
+                  >
+                    {slot.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>

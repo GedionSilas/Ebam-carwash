@@ -50,6 +50,40 @@ const fallbackPricingPlans = [
   },
 ];
 
+const getGroupedBusinessHours = (hours: { day: string; isClosed: boolean; openTime?: string; closeTime?: string }[]) => {
+  const sorted = [...hours].sort((a, b) => {
+    const da = parseInt(a.day) === 0 ? 7 : parseInt(a.day);
+    const db = parseInt(b.day) === 0 ? 7 : parseInt(b.day);
+    return da - db;
+  });
+
+  const formatTime = (timeStr?: string) => {
+    if (!timeStr) return "";
+    const [hStr, mStr] = timeStr.split(":");
+    const h = parseInt(hStr, 10);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 || 12;
+    return `${h12}:${mStr}${ampm}`;
+  };
+
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const groups: { startDay: string; endDay: string; hoursStr: string }[] = [];
+
+  for (const h of sorted) {
+    const dayName = days[parseInt(h.day)];
+    const hoursStr = h.isClosed ? "Closed" : `${formatTime(h.openTime)} - ${formatTime(h.closeTime)}`;
+
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.hoursStr === hoursStr) {
+      lastGroup.endDay = dayName;
+    } else {
+      groups.push({ startDay: dayName, endDay: dayName, hoursStr });
+    }
+  }
+
+  return groups;
+};
+
 export default function HomePage() {
   const [isDark, setIsDark] = useState(true);
   const [content, setContent] = useState<SiteContent | null>(null);
@@ -118,7 +152,7 @@ export default function HomePage() {
           </nav>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <BookingButton size="sm" label="Book Now" className="hidden sm:inline-flex" />
+            <BookingButton size="sm" label="Book Now" className="hidden sm:inline-flex" businessHours={siteSettings?.businessHours} />
           </div>
         </div>
       </header>
@@ -137,7 +171,7 @@ export default function HomePage() {
               {siteSettings?.heroSubtitle || "Book a professional wash or full detail in under a minute. No phone calls, no waiting rooms."}
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <BookingButton size="xl" label={siteSettings?.heroCTA || "Book Now"} />
+              <BookingButton size="xl" label={siteSettings?.heroCTA || "Book Now"} businessHours={siteSettings?.businessHours} />
               <Button variant="outline" size="xl" asChild>
                 <a href="#services">View Services <ArrowRight className="ml-1 h-4 w-4" /></a>
               </Button>
@@ -212,39 +246,6 @@ export default function HomePage() {
         </section>
       )}
 
-      <section id="services" className="border-t border-border/60 bg-[hsl(var(--surface))]/40 py-20 md:py-28">
-        <div className="container-tight">
-          <div className="mb-12 max-w-2xl">
-            <h2 className="font-display text-4xl font-bold md:text-5xl">{siteSettings?.servicesHeading || "Services built for every car."}</h2>
-            <p className="mt-3 text-muted-foreground">{siteSettings?.servicesSubtitle || "Choose the level of care your vehicle deserves."}</p>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            {services.map((s) => (
-              <div
-                key={s._id || s.title}
-                className={`group relative flex flex-col rounded-2xl border p-7 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft ${
-                  s.isPopular ? "border-primary/40 bg-card" : "border-border bg-card"
-                }`}
-              >
-                {s.isPopular && (
-                  <span className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                    Most popular
-                  </span>
-                )}
-                <h3 className="font-display text-xl font-semibold">{s.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{s.description}</p>
-                <div className="mt-6 flex items-end justify-between">
-                  <span className="font-display text-3xl font-bold">{s.price}</span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" /> {s.duration || "-"}
-                  </span>
-                </div>
-                <BookingButton variant={s.isPopular ? "default" : "outline"} className="mt-6 w-full" label="Book this" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section id="how" className="py-20 md:py-28">
         <div className="container-tight">
@@ -294,7 +295,7 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  <BookingButton className="mt-6 w-full" label="Book Now" />
+                  <BookingButton className="mt-6 w-full" label="Book Now" businessHours={siteSettings?.businessHours} />
                 </div>
               ))}
             </div>
@@ -339,7 +340,7 @@ export default function HomePage() {
               Need a quick refresh or a full detailing service? Open the booking form and share your location, vehicle type,
               and service preference.
             </p>
-            <BookingButton className="mt-6" size="lg" label="Book Now" />
+            <BookingButton className="mt-6" size="lg" label="Book Now" businessHours={siteSettings?.businessHours} />
           </div>
         </div>
       </section>
@@ -361,8 +362,21 @@ export default function HomePage() {
           </div>
           <div className="space-y-2 text-sm">
             <div className="font-medium">Hours</div>
-            <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> Mon-Sat · 8am-7pm</div>
-            <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> Sun · 9am-5pm</div>
+            {siteSettings?.businessHours && siteSettings.businessHours.length > 0 ? (
+              getGroupedBusinessHours(siteSettings.businessHours).map((g, i) => (
+                <div key={i} className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span>
+                    {g.startDay === g.endDay ? g.startDay : `${g.startDay} - ${g.endDay}`} · {g.hoursStr}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> Mon-Sat · 8:00AM - 7:00PM</div>
+                <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> Sun · 9:00AM - 5:00PM</div>
+              </>
+            )}
           </div>
           <div className="space-y-2 text-sm">
             <div className="font-medium">Contact</div>
